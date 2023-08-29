@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "exhibition",
+    "name": "Exhibition",
+    "description": "A free Minecraft 1.8.9 Hack Client forked from LiquidBounce",
+    "version": "${version}",
+    "mcversion": "1.8.9",
+    "url": "https://liquidbounce.net",
+    "updateUrl": "",
+    "authorList": ["CCBlueX & Etern1ty_"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]

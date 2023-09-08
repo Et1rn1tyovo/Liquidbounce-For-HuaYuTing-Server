@@ -11,6 +11,8 @@ import net.ccbluex.liquidbounce.features.module.modules.render.Animations.animat
 import net.ccbluex.liquidbounce.features.module.modules.render.Animations.defaultAnimation
 import net.ccbluex.liquidbounce.utils.MinecraftInstance
 import net.ccbluex.liquidbounce.value.BoolValue
+import net.ccbluex.liquidbounce.value.FloatValue
+import net.ccbluex.liquidbounce.value.IntegerValue
 import net.ccbluex.liquidbounce.value.ListValue
 import net.minecraft.client.entity.AbstractClientPlayer
 import net.minecraft.client.renderer.GlStateManager.*
@@ -42,7 +44,7 @@ object Animations : Module("Animations", ModuleCategory.RENDER) {
 
     private val animations = arrayOf(
         OldAnimation(),
-        SwaingAnimation(),
+        SwangAnimation(),
         SmoothAnimation(),
         PunchAnimation(),
         PushAnimation(),
@@ -52,6 +54,14 @@ object Animations : Module("Animations", ModuleCategory.RENDER) {
     )
 
     private val animationMode by ListValue("Mode", animations.map { it.name }.toTypedArray(), "Pushdown")
+    val itemX by FloatValue("Item-X", 0.0f, -1f..1f)
+    val itemY by FloatValue("Item-Y", 0.0f, -1f..1f)
+    val itemZ by FloatValue("Item-Z", 0.0f, -1f..1f)
+    val blockX by FloatValue("Block-X", 0.0f, -1f..1f)
+    val blockY by FloatValue("Block-Y", 0.0f, -1f..1f)
+    val blockZ by FloatValue("Block-Z", 0.0f, -1f..1f)
+    val scale by FloatValue("Scale", 1f, 0.0f..2f)
+    val slowdown by IntegerValue("SlowDown", 0, -8..20)
     val oddSwing by BoolValue("OddSwing", false)
 
     fun getAnimation() = animations.firstOrNull { it.name == animationMode }
@@ -136,12 +146,12 @@ class PushAnimation : Animation("Push") {
     }
 
 }
-class SwaingAnimation : Animation("Swaing") {
+class SwangAnimation : Animation("Swang") {
     override fun transform(swingProgress: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
-        transformFirstPersonItem(f / 2.0f, -0.2f)
-        val var154 = MathHelper.sin((swingProgress * swingProgress * Math.PI).toFloat())
-        rotate(-var154 / 19.0f, var154 / 20.0f, -0.0f, 9.0f)
-        rotate(-var154 * 30.0f, 10.0f, var154 / 50.0f, 0.0f)
+        transformFirstPersonItem(f / 2.0f, swingProgress)
+        val var152 = MathHelper.sin((MathHelper.sqrt_float(swingProgress) * Math.PI).toFloat())
+        rotate(var152 * 30.0f / 2.0f, -var152, -0.0f, 9.0f)
+        rotate(var152 * 40.0f, 1.0f, -var152 / 2.0f, -0.0f)
         func_178103_d(0.4f)
     }
 

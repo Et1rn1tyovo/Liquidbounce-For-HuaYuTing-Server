@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.item;
 
+import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura;
 import net.ccbluex.liquidbounce.features.module.modules.render.Animation;
 import net.ccbluex.liquidbounce.features.module.modules.render.Animations;
@@ -97,47 +98,67 @@ public abstract class MixinItemRenderer {
 
         if(itemToRender != null) {
             final KillAura killAura = KillAura.INSTANCE;
+            final Animations animations = Animations.INSTANCE;
 
+            if (LiquidBounce.INSTANCE.getModuleManager().getModule(Animations.class).getState()) {
+                if (mc.thePlayer.getHeldItem().getItem() != null) {
+                    GlStateManager.translate(animations.getItemX(),animations.getItemY(),animations.getItemZ());
+                }
+            }
             if(itemToRender.getItem() instanceof ItemMap) {
                 renderItemMap(abstractclientplayer, f2, f, f1);
             } else if (abstractclientplayer.getItemInUseCount() > 0 || (itemToRender.getItem() instanceof ItemSword && killAura.getRenderBlocking())) {
                 EnumAction enumaction = killAura.getRenderBlocking() ? EnumAction.BLOCK : itemToRender.getItemUseAction();
-
                 switch(enumaction) {
                     case NONE:
                         transformFirstPersonItem(f, 0f);
+                        if (animations.getState()){
+                            GlStateManager.scale(animations.getScale(), animations.getScale(), animations.getScale());
+                        }
                         break;
                     case EAT:
                     case DRINK:
                         performDrinking(abstractclientplayer, partialTicks);
                         transformFirstPersonItem(f, f1);
+                        if (animations.getState()){
+                            GlStateManager.scale(animations.getScale(), animations.getScale(), animations.getScale());
+                        }
                         break;
                     case BLOCK:
-                        final Animations animations = Animations.INSTANCE;
                         final Animation animation;
-
+                        if (animations.getState()) {
+                            GlStateManager.translate(animations.getBlockX(), animations.getBlockY(), animations.getBlockZ());
+                        }
                         if (animations.getState()) {
                             animation = animations.getAnimation();
                         } else { // Use 1.7 animation
-                            animation = animations.getDefaultAnimation();
+                            animation = null;
                         }
 
                         if (animation != null) {
                             animation.transform(f1, f, prevEquippedProgress,equippedProgress,partialTicks,abstractclientplayer);
+                            if (animations.getState()){
+                                GlStateManager.scale(animations.getScale(), animations.getScale(), animations.getScale());
+                            }
                         }
                         break;
                     case BOW:
                         transformFirstPersonItem(f, f1);
                         doBowTransformations(partialTicks, abstractclientplayer);
+                        if (animations.getState()){
+                            GlStateManager.scale(animations.getScale(), animations.getScale(), animations.getScale());
+                        }
                 }
             }else{
-                final Animations animations = Animations.INSTANCE;
 
                 if (!animations.getState() || !animations.getOddSwing()) {
                     doItemUsedTransformations(f1);
                 }
 
                 transformFirstPersonItem(f, f1);
+                if (animations.getState()){
+                    GlStateManager.scale(animations.getScale(), animations.getScale(), animations.getScale());
+                }
             }
 
             renderItem(abstractclientplayer, itemToRender, ItemCameraTransforms.TransformType.FIRST_PERSON);

@@ -52,7 +52,8 @@ object ModuleManager : Listenable {
             ViaVersionFix::class.java,
             AutoL::class.java,
             Cape::class.java,
-            MoBends::class.java
+            MoBends::class.java,
+            Projectiles::class.java
         )
 
         // Register modules which have already been instanced (Kotlin objects)
@@ -169,7 +170,6 @@ object ModuleManager : Listenable {
             PortalMenu,
             PotionSaver,
             PotionSpoof,
-            Projectiles,
             ProphuntESP,
             Reach,
             Refill,

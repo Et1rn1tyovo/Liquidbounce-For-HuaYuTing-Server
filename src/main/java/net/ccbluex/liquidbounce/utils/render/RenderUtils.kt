@@ -15,8 +15,11 @@ import net.ccbluex.liquidbounce.utils.render.ColorUtils.stripColor
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.FontRenderer
 import net.minecraft.client.gui.ScaledResolution
-import net.minecraft.client.renderer.*
+import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.GlStateManager.*
+import net.minecraft.client.renderer.OpenGlHelper
+import net.minecraft.client.renderer.RenderHelper
+import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.entity.RenderManager
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import net.minecraft.client.shader.Framebuffer
@@ -38,7 +41,40 @@ object RenderUtils : MinecraftInstance() {
     private val glCapMap = mutableMapOf<Int, Boolean>()
     private val DISPLAY_LISTS_2D = IntArray(4)
     var deltaTime = 0
-
+    @JvmStatic
+    fun disableRender3D(enableDepth: Boolean) {
+        if (enableDepth) {
+            glDepthMask(true)
+            glEnable(2929)
+        }
+        glEnable(3553)
+        glDisable(3042)
+        glEnable(3008)
+        glDisable(2848)
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f)
+    }
+    @JvmStatic
+    fun enableRender3D(disableDepth: Boolean) {
+        if (disableDepth) {
+            glDepthMask(false)
+            glDisable(2929)
+        }
+        glDisable(3008)
+        glEnable(3042)
+        glDisable(3553)
+        glBlendFunc(770, 771)
+        glEnable(2848)
+        glHint(3154, 4354)
+        glLineWidth(1.0f)
+    }
+    @JvmStatic
+    fun setColor(colorHex: Int) {
+        val alpha = (colorHex shr 24 and 255).toFloat() / 255.0f
+        val red = (colorHex shr 16 and 255).toFloat() / 255.0f
+        val green = (colorHex shr 8 and 255).toFloat() / 255.0f
+        val blue = (colorHex and 255).toFloat() / 255.0f
+        glColor4f(red, green, blue, alpha)
+    }
     init {
         for (i in DISPLAY_LISTS_2D.indices) {
             DISPLAY_LISTS_2D[i] = glGenLists(1)
@@ -69,7 +105,7 @@ object RenderUtils : MinecraftInstance() {
         quickDrawRect(-7.3f, -20.3f, -4f, -20f)
         glEndList()
     }
-
+    @JvmStatic
     fun drawEntityOnScreen(posX: Int, posY: Int, scale: Int, entity: EntityLivingBase?) {
         drawEntityOnScreen(
             posX.toDouble(),
@@ -98,6 +134,7 @@ object RenderUtils : MinecraftInstance() {
         disableTexture2D()
         setActiveTexture(OpenGlHelper.defaultTexUnit)
     }
+    @JvmStatic
     fun drawRectBasedBorder(x: Float, y: Float, x2: Float, y2: Float, width: Float, color1: Int) {
         drawRect(x - width / 2f, y - width / 2f, x2 + width / 2f, y + width / 2f, color1)
         drawRect(x - width / 2f, y + width / 2f, x + width / 2f, y2 + width / 2f, color1)
@@ -301,6 +338,7 @@ object RenderUtils : MinecraftInstance() {
             (System.currentTimeMillis() + index) % (seconds * 1000) / (seconds * 1000).toFloat()
         return Color.HSBtoRGB(hue, saturation, brightness)
     }
+    @JvmStatic
     fun drawExhiRect(x: Float, y: Float, x2: Float, y2: Float, alpha: Float) {
         drawRect(x - 3.5f, y - 3.5f, x2 + 3.5f, y2 + 3.5f, Color(0f, 0f, 0f, alpha).rgb)
         drawRect(x - 3f, y - 3f, x2 + 3f, y2 + 3f, Color(50f / 255f, 50f / 255f, 50f / 255f, alpha).rgb)
@@ -570,6 +608,7 @@ object RenderUtils : MinecraftInstance() {
         glEnd()
         GLUtils.end2DRendering()
     }
+    @JvmStatic
     fun scaleEnd() {
         glPopMatrix()
     }
@@ -975,7 +1014,7 @@ object RenderUtils : MinecraftInstance() {
         glVertex2d(x2.toDouble(), y2.toDouble())
         glEnd()
     }
-
+    @JvmStatic
     fun drawRect(x: Float, y: Float, x2: Float, y2: Float, color: Int) {
         glEnable(GL_BLEND)
         glDisable(GL_TEXTURE_2D)

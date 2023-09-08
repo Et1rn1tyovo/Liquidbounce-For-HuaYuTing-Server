@@ -45,7 +45,7 @@ public class AutoL extends Module {
     }
     @EventTarget
     public void onTick(TickEvent event){
-        if (target != null && target.isDead && target instanceof EntityPlayer && target == KillAura.INSTANCE.getTarget()){
+        if (target != null && target.isDead && target instanceof EntityPlayer){
             mc.thePlayer.sendChatMessage((HYT.get()?"@":"")+"[AutoL] !_ " + target.getName() + " " + message[index]);
             index++;
             target = null;

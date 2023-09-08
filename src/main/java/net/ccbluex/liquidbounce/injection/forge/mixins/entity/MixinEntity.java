@@ -9,7 +9,7 @@ import net.ccbluex.liquidbounce.event.EventManager;
 import net.ccbluex.liquidbounce.event.StrafeEvent;
 import net.ccbluex.liquidbounce.features.module.modules.combat.HitBox;
 import net.ccbluex.liquidbounce.features.module.modules.exploit.NoPitchLimit;
-import net.ccbluex.liquidbounce.features.module.modules.hyt.ViaFix;
+import net.ccbluex.liquidbounce.features.module.modules.hyt.ViaVersionFix;
 import net.ccbluex.liquidbounce.features.module.modules.movement.NoFluid;
 import net.ccbluex.liquidbounce.utils.EntityUtils;
 import net.minecraft.block.Block;
@@ -191,12 +191,12 @@ public abstract class MixinEntity {
         final HitBox hitBox = HitBox.INSTANCE;
 
         if (hitBox.getState() && EntityUtils.INSTANCE.isSelected(((Entity)((Object)this)),true)) {
-            if (ViaFix.toggle.get()) {
+            if (ViaVersionFix.toggle.get()) {
                 callbackInfoReturnable.setReturnValue(hitBox.determineSize(((Entity)((Object)this))));
             } else {
                 callbackInfoReturnable.setReturnValue(0.1F + hitBox.determineSize(((Entity)((Object)this))));
             }
-        } else if (ViaFix.toggle.get()) {
+        } else if (ViaVersionFix.toggle.get()) {
             callbackInfoReturnable.setReturnValue(0.0F);
         }
     }

@@ -117,9 +117,6 @@ class Arraylist(x: Double = 1.0, y: Double = 2.0, scale: Float = 1F,
 
         return if (upperCase) displayString.uppercase() else displayString
     }
-
-
-
     override fun drawElement(): Border? {
 
         AWTFontRenderer.assumeNonVolatile = true

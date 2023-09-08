@@ -12,17 +12,15 @@ import net.ccbluex.liquidbounce.value.ListValue
 import net.minecraft.network.play.server.S02PacketChat
 import java.util.regex.Pattern
 
-object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
+object AntiDeads : Module("AntiDeads",ModuleCategory.HYT) {
 
     private val mode = ListValue("GetNameMode", arrayOf("4V4/1V1", "32/64", "16V16"), "4V4/1V1")
+    private val debug = BoolValue("Debug",false)
 
     override fun onDisable() {
         clearAll()
         super.onDisable()
     }
-
-    override val tag: String
-    get() = mode.get()
     @EventTarget
     fun onPacket(event: PacketEvent) { //Trim 去除名字后面的空字符串
         val packet = event.packet
@@ -36,12 +34,13 @@ object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
                         val name = matcher.group(1).trim()
                         if (name != "") {
                             LiquidBounce.fileManager.friendsConfig.addFriend(name)
-                            ClientUtils.displayChatMessage("§7[§8§6Liquidbounce+§7]§fAdd HYT Bot:$name")
+                            if (debug.get()) { ClientUtils.displayChatMessage("§7[§8§6Liquidbounce+§7]§fAdd HYT Bot:$name") }
+
                             Thread {
                                 try {
                                     Thread.sleep(5000)
                                     LiquidBounce.fileManager.friendsConfig.removeFriend(name)
-                                    ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    if (debug.get()){ ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name") }
                                 } catch (ex: InterruptedException) {
                                     ex.printStackTrace()
                                 }
@@ -52,12 +51,14 @@ object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
                         val name = matcher2.group(1).trim()
                         if (name != "") {
                             LiquidBounce.fileManager.friendsConfig.addFriend(name)
-                            ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            if (debug.get()) {
+                                ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            }
                             Thread {
                                 try {
                                     Thread.sleep(5000)
                                     LiquidBounce.fileManager.friendsConfig.removeFriend(name)
-                                    ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    if (debug.get()){ ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name") }
                                 } catch (ex: InterruptedException) {
                                     ex.printStackTrace()
                                 }
@@ -73,12 +74,16 @@ object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
                         val name = matcher.group(1).trim()
                         if (name != "") {
                             LiquidBounce.fileManager.friendsConfig.addFriend(name)
-                            ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            if (debug.get()){
+                                ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            }
                             Thread {
                                 try {
                                     Thread.sleep(10000)
                                     LiquidBounce.fileManager.friendsConfig.removeFriend(name)
-                                    ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    if (debug.get()){
+                                        ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    }
                                 } catch (ex: InterruptedException) {
                                     ex.printStackTrace()
                                 }
@@ -89,12 +94,16 @@ object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
                         val name = matcher2.group(1).trim()
                         if (name != "") {
                             LiquidBounce.fileManager.friendsConfig.addFriend(name)
-                            ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            if (debug.get()) {
+                                ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            }
                             Thread {
                                 try {
                                     Thread.sleep(10000)
                                     LiquidBounce.fileManager.friendsConfig.removeFriend(name)
-                                    ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    if (debug.get()) {
+                                        ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    }
                                 } catch (ex: InterruptedException) {
                                     ex.printStackTrace()
                                 }
@@ -109,12 +118,16 @@ object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
                         val name = matcher.group(1).trim()
                         if (name != "") {
                             LiquidBounce.fileManager.friendsConfig.addFriend(name)
-                            ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            if (debug.get()) {
+                                ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fAdd HYT Bot:$name")
+                            }
                             Thread {
                                 try {
                                     Thread.sleep(10000)
                                     LiquidBounce.fileManager.friendsConfig.removeFriend(name)
-                                    ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    if (debug.get()) {
+                                        ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    }
                                 } catch (ex: InterruptedException) {
                                     ex.printStackTrace()
                                 }
@@ -129,7 +142,7 @@ object HytGetName : Module("HytGetName",ModuleCategory.HYT) {
                             Thread {
                                 try {
                                     Thread.sleep(10000)
-                                    ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name")
+                                    if (debug.get()){ ClientUtils.displayChatMessage("§7[§8§6Liquidbounce§7]§fDeleted HYT Bot:$name") }
                                 } catch (ex: InterruptedException) {
                                     ex.printStackTrace()
                                 }

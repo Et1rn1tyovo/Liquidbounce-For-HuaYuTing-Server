@@ -50,8 +50,8 @@ object HUD : Module("HUD", ModuleCategory.RENDER, defaultInArray = false) {
                     System.currentTimeMillis()
                 ) + ChatFormatting.GRAY + "]",2f + font.getStringWidth("E"),2f,-1)
             font.drawStringWithShadow(
-                ChatFormatting.GRAY.toString() + "Release Build - " + ChatFormatting.RESET + "1.0" + ChatFormatting.GRAY.toString() + " User - " + ChatFormatting.RESET + mc.session.playerID,
-                ScaledResolution(mc).getScaledWidth() - font.getStringWidth(ChatFormatting.GRAY.toString() + "Release Build - " + ChatFormatting.RESET + "1.0" + ChatFormatting.GRAY.toString() + " User - " + ChatFormatting.RESET + mc.session.playerID).toFloat(),
+                ChatFormatting.GRAY.toString() + "Release Build - " + ChatFormatting.RESET + "1.0" + ChatFormatting.GRAY.toString() + " User - " + ChatFormatting.RESET + mc.session.username,
+                ScaledResolution(mc).getScaledWidth() - font.getStringWidth(ChatFormatting.GRAY.toString() + "Release Build - " + ChatFormatting.RESET + "1.0" + ChatFormatting.GRAY.toString() + " User - " + ChatFormatting.RESET + mc.session.username).toFloat(),
                 ScaledResolution(mc).getScaledHeight() - font.FONT_HEIGHT - 1f,
                 -1
             )

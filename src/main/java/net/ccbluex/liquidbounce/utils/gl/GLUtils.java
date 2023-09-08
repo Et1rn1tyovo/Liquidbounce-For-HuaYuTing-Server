@@ -2,6 +2,7 @@ package net.ccbluex.liquidbounce.utils.gl;
 
 import net.minecraft.client.renderer.GlStateManager;
 
+import static net.minecraft.client.renderer.RenderHelper.enableStandardItemLighting;
 import static org.lwjgl.opengl.GL11.*;
 
 public class GLUtils {
@@ -20,7 +21,13 @@ public class GLUtils {
         render.run();
         glEnd();
     }
-
+    public static void enableGUIStandardItemLighting() {
+        GlStateManager.pushMatrix();
+        GlStateManager.rotate(-30.0f, 0.0f, 1.0f, 0.0f);
+        GlStateManager.rotate(165.0f, 1.0f, 0.0f, 0.0f);
+        enableStandardItemLighting();
+        GlStateManager.popMatrix();
+    }
     public static int[] enabledCaps = new int[32];
 
     public static void enableCaps(int... caps) {

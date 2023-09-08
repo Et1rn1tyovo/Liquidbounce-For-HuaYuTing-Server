@@ -123,7 +123,7 @@ public abstract class MixinItemRenderer {
                         }
 
                         if (animation != null) {
-                            animation.transform(f1, f, abstractclientplayer);
+                            animation.transform(f1, f, prevEquippedProgress,equippedProgress,partialTicks,abstractclientplayer);
                         }
                         break;
                     case BOW:

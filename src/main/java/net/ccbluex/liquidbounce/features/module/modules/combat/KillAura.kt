@@ -21,7 +21,6 @@ import net.ccbluex.liquidbounce.utils.EntityUtils.targetDead
 import net.ccbluex.liquidbounce.utils.EntityUtils.targetInvisible
 import net.ccbluex.liquidbounce.utils.EntityUtils.targetMobs
 import net.ccbluex.liquidbounce.utils.EntityUtils.targetPlayer
-import net.ccbluex.liquidbounce.utils.item.ItemUtils.isConsumingItem
 import net.ccbluex.liquidbounce.utils.MovementUtils.isMoving
 import net.ccbluex.liquidbounce.utils.PacketUtils.sendPacket
 import net.ccbluex.liquidbounce.utils.PacketUtils.sendPackets
@@ -36,9 +35,13 @@ import net.ccbluex.liquidbounce.utils.RotationUtils.setTargetRotation
 import net.ccbluex.liquidbounce.utils.RotationUtils.targetRotation
 import net.ccbluex.liquidbounce.utils.RotationUtils.toRotation
 import net.ccbluex.liquidbounce.utils.extensions.*
+import net.ccbluex.liquidbounce.utils.item.ItemUtils.isConsumingItem
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils.nextFloat
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils.nextInt
 import net.ccbluex.liquidbounce.utils.render.RenderUtils.drawPlatform
+import net.ccbluex.liquidbounce.utils.render.RenderUtils.drawTargetCapsule
+import net.ccbluex.liquidbounce.utils.render.RenderUtils.renderBoundingBox
+import net.ccbluex.liquidbounce.utils.render.RenderUtils.resetColor
 import net.ccbluex.liquidbounce.utils.timer.MSTimer
 import net.ccbluex.liquidbounce.utils.timer.TimeUtils.randomClickDelay
 import net.ccbluex.liquidbounce.value.BoolValue
@@ -189,6 +192,7 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
     // AAC value also modifies target selection a bit, not just rotations, but it is minor
     private val aacValue = BoolValue("AAC", false) { !maxTurnSpeedValue.isMinimal() }
     private val aac by aacValue
+    private val verticalCheck by BoolValue("VerticalCheck",false)
 
     private val keepRotationTicks by object : IntegerValue("KeepRotationTicks", 5, 1..20) {
         override fun isSupported() = !aacValue.isActive()
@@ -206,8 +210,8 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
     // Rotations
     private val silentRotationValue = BoolValue("SilentRotation", true) { !maxTurnSpeedValue.isMinimal() }
     private val silentRotation by silentRotationValue
-    private val rotationStrafe by ListValue(
-        "Strafe", arrayOf("Off", "Strict", "Silent"), "Off"
+    val rotationStrafe by ListValue(
+        "Strafe", arrayOf("Off", "Strict", "Silent", "Advanced"), "Off"
     ) { silentRotationValue.isActive() }
     private val randomCenter by BoolValue("RandomCenter", true) { !maxTurnSpeedValue.isMinimal() }
     private val outborder by BoolValue("Outborder", false) { !maxTurnSpeedValue.isMinimal() }
@@ -239,11 +243,14 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
 
     // Visuals
     private val mark by BoolValue("Mark", true)
+    private val markMode by ListValue("MarkMode", arrayOf("Normal", "Jello", "Box"), "Normal")
     private val fakeSharp by BoolValue("FakeSharp", true)
 
     /**
      * MODULE
      */
+    //Range
+    private var lastRange = range
 
     // Target
     var target: EntityLivingBase? = null
@@ -411,9 +418,31 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
 
         target ?: return
 
-        if (mark && targetMode != "Multi") drawPlatform(
-            target!!, if (hitable) Color(37, 126, 255, 70) else Color(255, 0, 0, 70)
-        )
+        if (mark && targetMode != "Multi") {
+            when (markMode.lowercase()){
+                "normal"->{
+                    drawPlatform(
+                        target!!, if (hitable) Color(37, 126, 255, 70) else Color(255, 0, 0, 70)
+                    )
+                    resetColor()
+                }
+                "jello"->{
+                    drawTargetCapsule(
+                        target!!,
+                        event.partialTicks,
+                        0.75,
+                        -1,
+                        1F
+                    )
+                    resetColor()
+                }
+                "box"->{
+                    renderBoundingBox(target, Color(255, 0, 0), 0.2f)
+                    resetColor()
+                }
+            }
+
+        }
 
         if (currentTarget != null && attackTimer.hasTimePassed(attackDelay)) {
             clicks++
@@ -421,7 +450,21 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
             attackDelay = randomClickDelay(minCPS, maxCPS)
         }
     }
-
+    @EventTarget
+    fun onTickUpdate(event: TickEvent) {
+        if (range != 3.0F){
+            lastRange = range
+        }
+        if (verticalCheck && target != null) {
+            if (mc.thePlayer.posY > target!!.posY) {
+                range = 3.0F
+            }else{
+                range = lastRange
+            }
+        }else{
+            range = lastRange
+        }
+    }
     /**
      * Handle entity move
      */
@@ -464,29 +507,30 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
         if (!hitable || failHit || currentTarget.hurtTime > hurtTime) {
             if (swing && (fakeSwing || failHit)) thePlayer.swingItem()
         } else {
-            blockStopInDead = false
-            // Attack
-            if (!multi) {
-                attackEntity(currentTarget)
-            } else {
-                var targets = 0
+                blockStopInDead = false
+                // Attack
+                if (!multi) {
+                    attackEntity(currentTarget)
+                } else {
+                    var targets = 0
 
-                for (entity in theWorld.loadedEntityList) {
-                    val distance = thePlayer.getDistanceToEntityBox(entity)
+                    for (entity in theWorld.loadedEntityList) {
+                        val distance = thePlayer.getDistanceToEntityBox(entity)
 
-                    if (entity is EntityLivingBase && isEnemy(entity) && distance <= getRange(entity)) {
-                        attackEntity(entity)
+                        if (entity is EntityLivingBase && isEnemy(entity) && distance <= getRange(entity)) {
+                            attackEntity(entity)
 
-                        targets += 1
+                            targets += 1
 
-                        if (limitedMultiTargets != 0 && limitedMultiTargets <= targets) break
+                            if (limitedMultiTargets != 0 && limitedMultiTargets <= targets) break
+                        }
                     }
                 }
-            }
 
-            prevTargetEntities += if (aac) target.entityId else currentTarget.entityId
+                prevTargetEntities += if (aac) target.entityId else currentTarget.entityId
 
-            if (target == currentTarget) this.target = null
+                if (target == currentTarget) this.target = null
+
         }
 
         if (targetMode.equals("Switch", ignoreCase = true) && attackTimer.hasTimePassed((switchDelay).toLong())) {
@@ -620,7 +664,9 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
 
         // Attack target
         if (swing) thePlayer.swingItem()
-
+        if (autoBlock == "Packet" && (canBlock)) startBlocking(
+            entity, interactAutoBlock
+        )
         sendPacket(C02PacketUseEntity(entity, ATTACK))
 
         if (keepSprint) {
@@ -671,9 +717,7 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
         }
          */
         // Start blocking after attack
-        if (autoBlock == "Packet" && (thePlayer.isBlocking || canBlock)) startBlocking(
-            entity, interactAutoBlock
-        )
+
 
         resetLastAttackedTicks()
     }
@@ -810,7 +854,11 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
                 )
             }
 
-            if(!autoBlock.equals("KeyBind")){ sendPacket(C08PacketPlayerBlockPlacement(BlockPos(-1, -1, -1), 255, mc.thePlayer.heldItem, 0f, 0f, 0f)) }else{
+            if(!autoBlock.equals("KeyBind")){
+                mc.netHandler.addToSendQueue(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem % 8 + 1))
+                mc.netHandler.addToSendQueue(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
+                sendPacket(C08PacketPlayerBlockPlacement(BlockPos(-1, -1, -1), 255, mc.thePlayer.heldItem, 0f, 0f, 0f))
+            }else{
                 mc.gameSettings.keyBindUseItem.pressed = true;
             }
             blockStatus = true
@@ -825,8 +873,13 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
      */
     private fun stopBlocking() {
         if (blockStatus) {
-            if (!autoBlock.equals("KeyBind")){ sendPacket(C07PacketPlayerDigging(RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN)) }else{
-                mc.gameSettings.keyBindUseItem.pressed = false;
+            if (!autoBlock.equals("KeyBind") && !autoBlock.equals("Packet")){ sendPacket(C07PacketPlayerDigging(RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN)) }else{
+                if (autoBlock.equals("Packet")){
+                    mc.netHandler.addToSendQueue(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem % 8 + 1))
+                    mc.netHandler.addToSendQueue(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
+                }else {
+                    mc.gameSettings.keyBindUseItem.pressed = false;
+                }
             }
             blockStatus = false
         }

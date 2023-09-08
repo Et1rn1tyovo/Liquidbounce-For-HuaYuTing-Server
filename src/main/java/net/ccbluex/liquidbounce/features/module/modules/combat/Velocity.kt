@@ -5,11 +5,13 @@
  */
 package net.ccbluex.liquidbounce.features.module.modules.combat
 
-import net.ccbluex.liquidbounce.event.*
+import net.ccbluex.liquidbounce.event.EventTarget
+import net.ccbluex.liquidbounce.event.JumpEvent
+import net.ccbluex.liquidbounce.event.PacketEvent
+import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.features.module.modules.movement.Speed
-import net.ccbluex.liquidbounce.utils.MovementUtils
 import net.ccbluex.liquidbounce.utils.MovementUtils.isOnGround
 import net.ccbluex.liquidbounce.utils.MovementUtils.speed
 import net.ccbluex.liquidbounce.utils.extensions.toRadians
@@ -19,13 +21,13 @@ import net.ccbluex.liquidbounce.value.BoolValue
 import net.ccbluex.liquidbounce.value.FloatValue
 import net.ccbluex.liquidbounce.value.IntegerValue
 import net.ccbluex.liquidbounce.value.ListValue
-import net.minecraft.network.Packet
-import net.minecraft.network.ThreadQuickExitException
-import net.minecraft.network.play.INetHandlerPlayClient
-import net.minecraft.network.play.client.*
-import net.minecraft.network.play.server.*
-import java.util.*
-import java.util.concurrent.LinkedBlockingQueue
+import net.minecraft.block.BlockSlab
+import net.minecraft.network.play.client.C07PacketPlayerDigging
+import net.minecraft.network.play.server.S12PacketEntityVelocity
+import net.minecraft.network.play.server.S27PacketExplosion
+import net.minecraft.util.BlockPos
+import net.minecraft.util.EnumFacing
+import net.minecraft.util.MovingObjectPosition
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -54,13 +56,6 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
     // Legit
     private val legitDisableInAir by BoolValue("DisableInAir", true) { mode == "Legit" }
     private val legitChance by IntegerValue("Chance", 100, 0..100) { mode == "Legit" }
-
-    //Grim
-    private val AutoDisableMode = ListValue("AutoDisable",arrayOf("Safe", "Silent"),"Silent"){ mode == "GrimAC" }
-
-    private val AutoSilent = IntegerValue("SilentTicks",10,0,10)
-    private val OnlyMove by BoolValue("OnlyMove", true) { mode == "GrimAC" }
-    private val OnlyGround by BoolValue("OnlyGround", true) { mode == "GrimAC" }
     /**
      * VALUES
      */
@@ -73,32 +68,22 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
     // AACPush
     private var jump = false
 
+    //Grim
+    var shouldSendC07PacketPlayerDigging = false
+
     override val tag
         get() = mode
-    //GrimAC
-    var cancelPackets = 0
-    private var resetPersec = 8
-    private var updates = 0
-    private var S08 = 0
-    private val packets = LinkedBlockingQueue<Packet<*>>()
-    private var disableLogger = false
-    private val inBus = LinkedList<Packet<INetHandlerPlayClient>>()
+
+
 
 
     override fun onEnable() {
         super.onEnable()
-        if (mc.thePlayer == null) return
-        inBus.clear()
-        cancelPackets = 0
     }
 
     override fun onDisable() {
         mc.thePlayer?.speedInAir = 0.02F
         super.onDisable()
-        if (mc.thePlayer == null) return
-        inBus.clear()
-        cancelPackets = 0
-        blink()
     }
 
     @EventTarget
@@ -128,18 +113,15 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
                 velocityInput = false
             }
             "grimac"->{
-                if((OnlyMove&&!MovementUtils.isMoving)||(OnlyGround&&!mc.thePlayer!!.onGround)){return}
-                updates++
-                if (resetPersec > 0) {
-                    if (updates >= 0) {
-                        updates = 0
-                        if (cancelPackets > 0){
-                            cancelPackets--
-                        }
-                    }
-                }
-                if(cancelPackets == 0){
-                    blink()
+                if (!(mc.theWorld.getBlockState(mc.thePlayer.position.down()).block is BlockSlab) && shouldSendC07PacketPlayerDigging){
+                    mc.netHandler.addToSendQueue(
+                        C07PacketPlayerDigging(
+                            C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK,
+                            BlockPos(mc.thePlayer),
+                            EnumFacing.DOWN
+                        )
+                    )
+                    shouldSendC07PacketPlayerDigging = false;
                 }
             }
             "reverse" -> {
@@ -244,6 +226,7 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
         val packet = event.packet
 
         if (packet is S12PacketEntityVelocity && (mc.theWorld?.getEntityByID(packet.entityID) ?: return) == thePlayer) {
+            shouldSendC07PacketPlayerDigging = true
             velocityTimer.reset()
 
             when (mode.lowercase()) {
@@ -255,69 +238,16 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
                         packet.motionX = (packet.motionX * horizontal).toInt()
                         packet.motionY = (packet.motionY * vertical).toInt()
                         packet.motionZ = (packet.motionZ * horizontal).toInt()
-                    } else {
+                    } else if (horizontal.equals(0) && vertical.equals(0)){
+                        mc.thePlayer.motionY = packet.motionX / 8000.0
+                        event.cancelEvent()
+                    }else{
                         event.cancelEvent()
                     }
                 }
                 "grimac"-> {
-                    if((OnlyMove&&!MovementUtils.isMoving)||(OnlyGround&&!mc.thePlayer!!.onGround)){
-                        return
-                    }
-
-                    val packet = event.packet
-
-                    if(S08>0){
-                        S08--
-                        return
-                    }
-
-                    if(packet is S08PacketPlayerPosLook){
-                        if(AutoDisableMode.get().equals("silent", ignoreCase = true)){
-                            S08 = AutoSilent.get()
-                        }
-                        if(AutoDisableMode.get().equals("safe", ignoreCase = true)){
-                            state = false
-                        }
-                    }
-
-                    if (packet is S12PacketEntityVelocity) {
-                        if (mc.thePlayer == null || (mc.theWorld?.getEntityByID(packet.entityID) ?: return) != mc.thePlayer) {
-                            return
-                        }
-                        if(MovementUtils.isMoving) {
-                            event.cancelEvent()
-                        } else {
-                            if (mc.thePlayer.onGround) {
-                                packet.motionX = 0
-                                packet.motionY = 0
-                                packet.motionZ = 0
-                            } else  {
-                                event.cancelEvent()
-                            }
-                        }
+                    if (!(mc.theWorld.getBlockState(mc.thePlayer.position.down()).block is BlockSlab)) {
                         event.cancelEvent()
-                        cancelPackets = 3
-                    }
-
-                    if(cancelPackets > 0){
-                        if(MovementUtils.isMoving || !OnlyMove){
-                            if (mc.thePlayer == null || disableLogger) return
-                            if (packet is C03PacketPlayer) // Cancel all movement stuff
-                                event.cancelEvent()
-                            if (packet is C03PacketPlayer.C04PacketPlayerPosition || packet is C03PacketPlayer.C06PacketPlayerPosLook ||
-                                packet is C08PacketPlayerBlockPlacement ||
-                                packet is C0APacketAnimation ||
-                                packet is C0BPacketEntityAction || packet is C02PacketUseEntity
-                            ) {
-                                event.cancelEvent()
-                                packets.add(packet)
-                            }
-                            if(packet::class.java.simpleName.startsWith("S", true)) {
-                                if(packet is S12PacketEntityVelocity && (mc.theWorld?.getEntityByID(packet.entityID) ?: return) == mc.thePlayer){return}
-                                event.cancelEvent()
-                                inBus.add(packet as Packet<INetHandlerPlayClient>)
-                            }
-                        }
                     }
                 }
                 "aac", "reverse", "smoothreverse", "aaczero" -> velocityInput = true
@@ -331,21 +261,14 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
                 }
             }
         } else if (packet is S27PacketExplosion) {
+            shouldSendC07PacketPlayerDigging = true
             when (mode.lowercase()) {
-                "simple" -> {
-                    val horizontal = horizontal
-                    val vertical = vertical
-
-                    if (horizontal + vertical > 0.0) {
-                        mc.thePlayer.motionX += packet.func_149149_c() * horizontal
-                        mc.thePlayer.motionY += packet.func_149144_d() * vertical
-                        mc.thePlayer.motionZ += packet.func_149147_e() * horizontal
-                    } else {
+                "aac", "reverse", "smoothreverse", "aaczero" -> velocityInput = true
+                "grimac"-> {
+                    if (!(mc.theWorld.getBlockState(mc.thePlayer.position.down()).block is BlockSlab)) {
                         event.cancelEvent()
                     }
                 }
-
-                "aac", "reverse", "smoothreverse", "aaczero" -> velocityInput = true
 
                 "glitch" -> {
                     if (!thePlayer.onGround)
@@ -377,21 +300,6 @@ object Velocity : Module("Velocity", ModuleCategory.COMBAT) {
             "aaczero" ->
                 if (thePlayer.hurtTime > 0)
                     event.cancelEvent()
-        }
-    }
-    private fun blink() {
-        try {
-            disableLogger = true
-            while (!packets.isEmpty()) {
-                mc.netHandler.networkManager.sendPacket(packets.take())
-            }
-            while (!inBus.isEmpty()) {
-                inBus.poll()?.processPacket(mc.netHandler)
-            }
-            disableLogger = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-            disableLogger = false
         }
     }
 }

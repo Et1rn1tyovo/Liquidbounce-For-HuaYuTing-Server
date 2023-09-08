@@ -8,7 +8,6 @@ package net.ccbluex.liquidbounce.ui.client.hud.element.elements
 
 import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
-import net.ccbluex.liquidbounce.features.module.modules.combat.TeleportHit
 import net.ccbluex.liquidbounce.ui.client.hud.designer.GuiHudDesigner
 import net.ccbluex.liquidbounce.ui.client.hud.element.Border
 import net.ccbluex.liquidbounce.ui.client.hud.element.Element
@@ -16,6 +15,7 @@ import net.ccbluex.liquidbounce.ui.client.hud.element.ElementInfo
 import net.ccbluex.liquidbounce.ui.font.Fonts
 import net.ccbluex.liquidbounce.utils.RegexUtils
 import net.ccbluex.liquidbounce.utils.extensions.getDistanceToEntityBox2
+import net.ccbluex.liquidbounce.utils.gl.GLUtils
 import net.ccbluex.liquidbounce.utils.render.BlendUtils
 import net.ccbluex.liquidbounce.utils.render.RenderUtils
 import net.ccbluex.liquidbounce.utils.render.animations.Animation
@@ -23,7 +23,6 @@ import net.ccbluex.liquidbounce.utils.render.animations.ContinualAnimation
 import net.ccbluex.liquidbounce.utils.render.animations.Direction
 import net.ccbluex.liquidbounce.utils.render.animations.impl.DecelerateAnimation
 import net.ccbluex.liquidbounce.value.BoolValue
-import net.ccbluex.liquidbounce.value.FloatValue
 import net.minecraft.client.Minecraft
 import net.minecraft.client.entity.AbstractClientPlayer
 import net.minecraft.client.gui.Gui
@@ -183,42 +182,74 @@ class Target : Element() {
                 mc.fontRendererObj.drawStringWithShadow("HP:${target.health.toInt()} | Dist:${mc.thePlayer.getDistanceToEntityBox2(target).toInt()}", 45F * 2, 21F * 2, (-1))
                 GlStateManager.popMatrix()
                 GlStateManager.resetColor()
-                GL11.glPushMatrix()
-                GL11.glColor4f(1f, 1f, 1f, 1f)
-                GlStateManager.enableRescaleNormal()
-                GlStateManager.enableBlend()
-                GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0)
-                RenderHelper.enableGUIStandardItemLighting()
-
-                val renderItem = mc.renderItem
-
                 var x = 45
                 var y = 28
 
                 for (index in 3 downTo 0) {
-                    val stack = target.inventory.armorInventory[index] ?: continue
+                    if (target.inventory.armorInventory.get(index) != null) {
+                        GlStateManager.pushMatrix()
+                        GlStateManager.scale(0.65, 0.65, 0.65)
+                        GlStateManager.scale(1 / 0.65, 1 / 0.65, 1 / 0.65)
+                        GlStateManager.popMatrix()
+                        GL11.glPushMatrix()
+                        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f)
+                        if (mc.theWorld != null) {
+                            GLUtils.enableGUIStandardItemLighting()
+                        }
+                        GlStateManager.pushMatrix()
+                        GlStateManager.disableAlpha()
+                        GlStateManager.clear(256)
+                        mc.renderItem.renderItemIntoGUI(
+                            target.inventory.armorInventory.get(index),
+                            x,
+                            y
+                        )
+                        mc.renderItem.zLevel = 0.0f
+                        GlStateManager.disableBlend()
+                        GlStateManager.scale(0.5, 0.5, 0.5)
+                        GlStateManager.disableDepth()
+                        GlStateManager.disableLighting()
+                        GlStateManager.enableDepth()
+                        GlStateManager.scale(2.0f, 2.0f, 25.0f)
+                        GlStateManager.enableAlpha()
+                        GlStateManager.popMatrix()
+                        GL11.glPopMatrix()
+                        x += 16
+                    }
 
-                    renderItem.renderItemIntoGUI(stack, x, y)
-                    renderItem.renderItemOverlays(mc.fontRendererObj, stack, x, y)
-                    RenderUtils.drawExhiEnchants(stack, x.toFloat(), y.toFloat())
-
-                    x += 16
+                }
+                if (target.inventory.mainInventory.get(target.inventory.currentItem) != null) {
+                    if (target.inventory.mainInventory.get(target.inventory.currentItem).isItemStackDamageable()) {
+                        GlStateManager.pushMatrix()
+                        GlStateManager.scale(0.65, 0.65, 0.65)
+                        GlStateManager.scale(1 / 0.65, 1 / 0.65, 1 / 0.65)
+                        GlStateManager.popMatrix()
+                    }
+                    GL11.glPushMatrix()
+                    GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f)
+                    if (mc.theWorld != null) {
+                        GLUtils.enableGUIStandardItemLighting()
+                    }
+                    GlStateManager.pushMatrix()
+                    GlStateManager.disableAlpha()
+                    GlStateManager.clear(256)
+                    mc.renderItem.renderItemIntoGUI(
+                        target.inventory.mainInventory.get(target.inventory.currentItem),
+                        x,
+                        y
+                    )
+                    mc.renderItem.zLevel = 0.0f
+                    GlStateManager.disableBlend()
+                    GlStateManager.scale(0.5, 0.5, 0.5)
+                    GlStateManager.disableDepth()
+                    GlStateManager.disableLighting()
+                    GlStateManager.enableDepth()
+                    GlStateManager.scale(2.0f, 2.0f, 2.0f)
+                    GlStateManager.enableAlpha()
+                    GlStateManager.popMatrix()
+                    GL11.glPopMatrix()
                 }
 
-                val mainStack = target.heldItem
-
-                renderItem.renderItemIntoGUI(mainStack, x, y)
-                renderItem.renderItemOverlays(mc.fontRendererObj, mainStack, x, y)
-                RenderUtils.drawExhiEnchants(mainStack, x.toFloat(), y.toFloat())
-
-
-                RenderHelper.disableStandardItemLighting()
-                GlStateManager.disableRescaleNormal()
-                GlStateManager.enableAlpha()
-                GlStateManager.disableBlend()
-                GlStateManager.disableLighting()
-                GlStateManager.disableCull()
-                GL11.glPopMatrix()
                 RenderUtils.scaleEnd()
             }
         }

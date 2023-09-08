@@ -75,7 +75,6 @@ object HUD : MinecraftInstance() {
           glPopMatrix()
         }
   }
-
   /** Update all elements */
   fun update() {
     for (element in elements) element.updateElement()

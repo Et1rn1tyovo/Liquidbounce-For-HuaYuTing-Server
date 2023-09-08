@@ -15,11 +15,8 @@ import net.ccbluex.liquidbounce.utils.render.ColorUtils.stripColor
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.FontRenderer
 import net.minecraft.client.gui.ScaledResolution
-import net.minecraft.client.renderer.GlStateManager
+import net.minecraft.client.renderer.*
 import net.minecraft.client.renderer.GlStateManager.*
-import net.minecraft.client.renderer.OpenGlHelper
-import net.minecraft.client.renderer.RenderHelper
-import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.entity.RenderManager
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import net.minecraft.client.shader.Framebuffer
@@ -754,7 +751,167 @@ object RenderUtils : MinecraftInstance() {
             ), color
         )
     }
-
+    var ticks = 0.0
+    var lastFrame: Long = 0
+    fun drawTargetCapsule(entity: Entity, partialTicks: Float, rad: Double, color: Int, alpha: Float) {
+        /*Got this from the people i made the Gui for*/
+        ticks += .004 * (System.currentTimeMillis() - lastFrame)
+        lastFrame = System.currentTimeMillis()
+        glPushMatrix()
+        glDisable(GL_TEXTURE_2D)
+        glEnable(GL_BLEND)
+        color(1f, 1f, 1f, 1f)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDisable(GL_DEPTH_TEST)
+        glDepthMask(false)
+        glShadeModel(GL_SMOOTH)
+        disableCull()
+        val x: Double =
+            entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * partialTicks - mc.getRenderManager().renderPosX
+        val y: Double =
+            entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks - mc.getRenderManager().renderPosY+ Math.sin(System.currentTimeMillis() / 2E+2) + 1
+        val z: Double =
+            entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks - mc.getRenderManager().renderPosZ
+        glBegin(GL_TRIANGLE_STRIP)
+        run {
+            var i = 0f
+            while (i < Math.PI * 2) {
+                val vecX = x + rad * Math.cos(i.toDouble())
+                val vecZ = z + rad * Math.sin(i.toDouble())
+                color(color, 0f)
+                glVertex3d(vecX, y - Math.sin(ticks + 1) / 2.7f, vecZ)
+                color(color, .52f * alpha)
+                glVertex3d(vecX, y, vecZ)
+                i += (Math.PI * 2 / 64f).toFloat()
+            }
+        }
+        glEnd()
+        glEnable(GL_LINE_SMOOTH)
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+        glLineWidth(1.5f)
+        glBegin(GL_LINE_STRIP)
+        color(1f, 1f, 1f, 1f)
+        color(color, .5f * alpha)
+        for (i in 0..180) {
+            glVertex3d(x - Math.sin(i * Math.PI * 2f / 90) * rad, y, z + Math.cos(i * Math.PI * 2f / 90) * rad)
+        }
+        glEnd()
+        glShadeModel(GL_FLAT)
+        glDepthMask(true)
+        glEnable(GL_DEPTH_TEST)
+        enableCull()
+        glDisable(GL_LINE_SMOOTH)
+        glEnable(GL_TEXTURE_2D)
+        glPopMatrix()
+        glColor4f(1f, 1f, 1f, 1f)
+    }
+    fun renderBoundingBox(entityLivingBase: EntityLivingBase?, color: Color, alpha: Float) {
+        val bb = ESPUtil.getInterpolatedBoundingBox(entityLivingBase)
+        pushMatrix()
+        GLUtils.setup2DRendering()
+        GLUtils.enableCaps(GL_BLEND, GL_POINT_SMOOTH, GL_POLYGON_SMOOTH, GL_LINE_SMOOTH)
+        glDisable(GL_DEPTH_TEST)
+        glDepthMask(false)
+        glLineWidth(3f)
+        glColor4f(color.red.toFloat(), color.green.toFloat(), color.blue.toFloat(), alpha)
+        color(color.rgb, alpha)
+        renderCustomBoundingBox(bb, false, true)
+        glDepthMask(true)
+        glEnable(GL_DEPTH_TEST)
+        GLUtils.disableCaps()
+        GLUtils.end2DRendering()
+        popMatrix()
+    }
+    fun renderCustomBoundingBox(bb: AxisAlignedBB, outline: Boolean, filled: Boolean) {
+        if (outline) {
+            glBegin(GL_LINE_STRIP)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glEnd()
+            glBegin(GL_LINE_STRIP)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glEnd()
+            glBegin(GL_LINES)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glEnd()
+        }
+        if (filled) {
+            glBegin(7)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glEnd()
+            glBegin(7)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glEnd()
+            glBegin(7)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glEnd()
+            glBegin(7)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glEnd()
+            glBegin(7)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glEnd()
+            glBegin(7)
+            glVertex3d(bb.minX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.minX, bb.minY, bb.maxZ)
+            glVertex3d(bb.minX, bb.maxY, bb.minZ)
+            glVertex3d(bb.minX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.minZ)
+            glVertex3d(bb.maxX, bb.minY, bb.minZ)
+            glVertex3d(bb.maxX, bb.maxY, bb.maxZ)
+            glVertex3d(bb.maxX, bb.minY, bb.maxZ)
+            glEnd()
+        }
+    }
     fun drawFilledBox(axisAlignedBB: AxisAlignedBB) {
         val tessellator = Tessellator.getInstance()
         val worldRenderer = tessellator.worldRenderer

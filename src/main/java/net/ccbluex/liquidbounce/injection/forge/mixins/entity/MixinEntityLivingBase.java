@@ -7,7 +7,7 @@ package net.ccbluex.liquidbounce.injection.forge.mixins.entity;
 
 import net.ccbluex.liquidbounce.event.EventManager;
 import net.ccbluex.liquidbounce.event.JumpEvent;
-import net.ccbluex.liquidbounce.features.module.modules.hyt.ViaFix;
+import net.ccbluex.liquidbounce.features.module.modules.hyt.ViaVersionFix;
 import net.ccbluex.liquidbounce.features.module.modules.movement.AirJump;
 import net.ccbluex.liquidbounce.features.module.modules.movement.LiquidWalk;
 import net.ccbluex.liquidbounce.features.module.modules.movement.NoJumpDelay;
@@ -34,8 +34,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import java.util.Objects;
 
 @Mixin(EntityLivingBase.class)
 public abstract class MixinEntityLivingBase extends MixinEntity {
@@ -127,7 +125,7 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
     }
     @ModifyConstant(method = "onLivingUpdate", constant = @Constant(doubleValue = 0.005D))
     private double ViaVersion_MovementThreshold(double constant) {
-        if (ViaFix.toggle.get()){
+        if (ViaVersionFix.toggle.get()){
             return 0.003D;
         }
         return 0.005D;

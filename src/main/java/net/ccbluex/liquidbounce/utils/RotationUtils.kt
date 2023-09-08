@@ -7,6 +7,8 @@ package net.ccbluex.liquidbounce.utils
 
 import net.ccbluex.liquidbounce.event.*
 import net.ccbluex.liquidbounce.features.module.modules.combat.FastBow
+import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
+import net.ccbluex.liquidbounce.features.module.modules.world.Scaffold
 import net.ccbluex.liquidbounce.utils.RaycastUtils.raycastEntity
 import net.ccbluex.liquidbounce.utils.extensions.*
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils
@@ -44,7 +46,6 @@ object RotationUtils : MinecraftInstance(), Listenable {
         if (random.nextGaussian() > 0.8) y = Math.random()
         if (random.nextGaussian() > 0.8) z = Math.random()
     }
-
     /**
      * Handle strafing
      */
@@ -56,7 +57,7 @@ object RotationUtils : MinecraftInstance(), Listenable {
 
         targetRotation?.let {
             it.applyStrafeToPlayer(event, strict)
-            event.cancelEvent()
+            if (!KillAura.rotationStrafe.equals("Advanced")){ event.cancelEvent() }
         }
     }
 
@@ -147,7 +148,21 @@ object RotationUtils : MinecraftInstance(), Listenable {
 
         return vecRotation
     }
+    fun setRotation(rotation: Rotation, ticks: Int,silent: Boolean,strafe: Boolean,speed: Int) {
+        val player = mc.thePlayer ?: return
 
+        if (silent) {
+            setTargetRotation(
+                rotation,
+                ticks,
+                strafe,
+                resetSpeed = speed.toFloat() to speed.toFloat(),
+                angleThresholdForReset = 0f
+            )
+        } else {
+            rotation.toPlayer(player)
+        }
+    }
     /**
      * Face target with bow
      *

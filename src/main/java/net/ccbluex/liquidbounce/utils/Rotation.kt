@@ -5,7 +5,10 @@
  */
 package net.ccbluex.liquidbounce.utils
 
+import akka.actor.Kill
+import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.event.StrafeEvent
+import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
 import net.ccbluex.liquidbounce.utils.RotationUtils.getFixedAngleDelta
 import net.ccbluex.liquidbounce.utils.RotationUtils.getFixedSensitivityAngle
 import net.ccbluex.liquidbounce.utils.RotationUtils.serverRotation
@@ -145,8 +148,10 @@ data class Rotation(var yaw: Float, var pitch: Float) : MinecraftInstance() {
             val yawSin = sin(yawRad)
             val yawCos = cos(yawRad)
 
-            player.motionX += calcStrafe * yawCos - calcForward * yawSin
-            player.motionZ += calcForward * yawCos + calcStrafe * yawSin
+            if (!KillAura.rotationStrafe.equals("Advanced")){
+                player.motionX += calcStrafe * yawCos - calcForward * yawSin
+                player.motionZ += calcForward * yawCos + calcStrafe * yawSin
+            }
         }
     }
 }

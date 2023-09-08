@@ -43,7 +43,6 @@ class Image : Element() {
         }
 
     }
-
     private val image = object : TextValue("Image", "") {
 
         override fun fromJson(element: JsonElement) {

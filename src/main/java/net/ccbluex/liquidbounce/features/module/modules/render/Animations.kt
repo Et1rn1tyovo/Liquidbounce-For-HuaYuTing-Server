@@ -16,7 +16,6 @@ import net.minecraft.client.entity.AbstractClientPlayer
 import net.minecraft.client.renderer.GlStateManager.*
 import net.minecraft.util.MathHelper
 import org.lwjgl.opengl.GL11.glTranslated
-import org.lwjgl.opengl.GL11.glTranslatef
 
 /**
  * Animations module
@@ -39,12 +38,15 @@ import org.lwjgl.opengl.GL11.glTranslatef
 object Animations : Module("Animations", ModuleCategory.RENDER) {
 
     // Default animation
-    val defaultAnimation = OneSevenAnimation()
+    val defaultAnimation = OldAnimation()
 
     private val animations = arrayOf(
-        OneSevenAnimation(),
-        PushdownAnimation(),
         OldAnimation(),
+        SwaingAnimation(),
+        SmoothAnimation(),
+        PunchAnimation(),
+        PushAnimation(),
+        LeakedAnimation(),
         ExhiExhiAnimation(),
         OldExhiAnimation()
     )
@@ -53,7 +55,8 @@ object Animations : Module("Animations", ModuleCategory.RENDER) {
     val oddSwing by BoolValue("OddSwing", false)
 
     fun getAnimation() = animations.firstOrNull { it.name == animationMode }
-
+    override val tag: String?
+        get() = animations.firstOrNull { it.name == animationMode }!!.name
 }
 
 /**
@@ -65,8 +68,7 @@ object Animations : Module("Animations", ModuleCategory.RENDER) {
  * @author CCBlueX
  */
 abstract class Animation(val name: String) : MinecraftInstance() {
-    abstract fun transform(f1: Float, f: Float, clientPlayer: AbstractClientPlayer)
-
+    abstract fun transform(f1: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer)
     /**
      * Transforms the block in the hand
      *
@@ -103,23 +105,79 @@ abstract class Animation(val name: String) : MinecraftInstance() {
  *
  * @author CCBlueX
  */
-class OneSevenAnimation : Animation("OneSeven") {
-    override fun transform(f1: Float, f: Float, clientPlayer: AbstractClientPlayer) {
-        transformFirstPersonItem(f, f1)
+class LeakedAnimation : Animation("Leaked") {
+    override fun transform(f1: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
+        val convertedProgress = MathHelper.sin(MathHelper.sqrt_float(f1) * Math.PI.toFloat());
+        transformFirstPersonItem(f, 0.0f)
+        translate(0.0f, 0.1f, 0.0f)
         doBlockTransformations()
-        translate(-0.5f, 0.2f, 0f)
+        rotate(convertedProgress * 35.0f / 2.0f, 0.0f, 1.0f, 1.5f)
+        rotate(-convertedProgress * 135.0f / 4.0f, 1.0f, 1.0f, 0.0f)
     }
 
 }
+class PushAnimation : Animation("Push") {
+    override fun transform(swingProgress: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
+        val equippedProgress1: Float = (1.0f
+                - (prevEquippedProgress + (equippedProgress - prevEquippedProgress) * p))
+        translate(0.56f, -0.52f, -0.71999997f)
+        translate(0.0f, equippedProgress1 * -0.6f, 0.0f)
 
-class OldAnimation : Animation("Old") {
-    override fun transform(f1: Float, f: Float, clientPlayer: AbstractClientPlayer) {
-        transformFirstPersonItem(f, f1)
+        rotate(45.0f, 0.0f, 1.0f, 0.0f)
+
+        val f4 = MathHelper.sin(swingProgress * swingProgress * Math.PI.toFloat())
+        val f5 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * Math.PI.toFloat())
+
+        rotate(f4 * -20.0f, 0.0f, 1.0f, 0.0f)
+        rotate(f5 * -20.0f, 0.0f, 0.0f, 1.0f)
+
+        scale(0.4f, 0.4f, 0.4f)
+        doBlockTransformations()
+    }
+
+}
+class SwaingAnimation : Animation("Swaing") {
+    override fun transform(swingProgress: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
+        transformFirstPersonItem(f / 2.0f, -0.2f)
+        val var154 = MathHelper.sin((swingProgress * swingProgress * Math.PI).toFloat())
+        rotate(-var154 / 19.0f, var154 / 20.0f, -0.0f, 9.0f)
+        rotate(-var154 * 30.0f, 10.0f, var154 / 50.0f, 0.0f)
+        func_178103_d(0.4f)
+    }
+
+}
+class SmoothAnimation : Animation("Smooth") {
+    override fun transform(swingProgress: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
+        val convertedProgress = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * Math.PI.toFloat());
+        transformFirstPersonItem(f / 1.5f, 0.0f)
+        func_178103_d(0.2f)
+        translate(-0.05f, 0.3f, 0.3f)
+        rotate(-convertedProgress * 140.0f, 8.0f, 0.0f, 8.0f)
+        rotate(convertedProgress * 90.0f, 8.0f, 0.0f, 8.0f)
+    }
+
+}
+class PunchAnimation : Animation("Punch") {
+    override fun transform(f1: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
+        val convertedProgress = MathHelper.sin(MathHelper.sqrt_float(f1) * Math.PI.toFloat());
+        transformFirstPersonItem(f, 0.0f)
+        func_178103_d(0.2f)
+        translate(0.1f, 0.2f, 0.3f)
+        rotate(-convertedProgress * 30.0f, -5.0f, 0.0f, 9.0f)
+        rotate(-convertedProgress * 10.0f, 1.0f, -0.4f, -0.5f)
+    }
+
+}
+class OldAnimation : Animation("1.7") {
+    override fun transform(f1: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
+        val equippedProgress3: Float = (1.0f
+                - (prevEquippedProgress + (equippedProgress - prevEquippedProgress) * p))
+        transformFirstPersonItem(equippedProgress3, f1)
         doBlockTransformations()
     }
 }
 class OldExhiAnimation : Animation("Old Exhibition") {
-    override fun transform(f1: Float, f: Float, clientPlayer: AbstractClientPlayer) {
+    override fun transform(f1: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
         glTranslated(-0.04, 0.13, 0.0)
         transformFirstPersonItem(f / 2.5f, 0.0f)
         rotate(-MathHelper.sin((MathHelper.sqrt_float(f1) * Math.PI).toFloat()) * 40.0f / 2.0f, MathHelper.sin((MathHelper.sqrt_float(f1) * Math.PI).toFloat()) / 2.0f, 1.0f, 4.0f)
@@ -128,7 +186,7 @@ class OldExhiAnimation : Animation("Old Exhibition") {
     }
 }
 class ExhiExhiAnimation : Animation("Exhibition") {
-    override fun transform(f1: Float, f: Float, clientPlayer: AbstractClientPlayer) {
+    override fun transform(f1: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
         glTranslated(-0.04, 0.13, 0.0)
         val convertedProgress2 = MathHelper.sin(MathHelper.sqrt_float(f1) * Math.PI.toFloat())
         transformFirstPersonItem(f / 1.5f, 0.0f)
@@ -150,30 +208,3 @@ private fun func_178103_d(qq: Float) {
 /**
  * Pushdown animation
  */
-class PushdownAnimation : Animation("Pushdown") {
-
-    /**
-     * @author CzechHek. Taken from Animations script.
-     */
-    override fun transform(f1: Float, f: Float, clientPlayer: AbstractClientPlayer) {
-        translate(0.56, -0.52, -0.5)
-        translate(0.0, -f.toDouble() * 0.3, 0.0)
-        rotate(45.5f, 0f, 1f, 0f)
-        val var3 = MathHelper.sin(0f)
-        val var4 = MathHelper.sin(0f)
-        rotate((var3 * -20f), 0f, 1f, 0f)
-        rotate((var4 * -20f), 0f, 0f, 1f)
-        rotate((var4 * -80f), 1f, 0f, 0f)
-        scale(0.32, 0.32, 0.32)
-        val var15 = MathHelper.sin((MathHelper.sqrt_float(f1) * 3.1415927f))
-        rotate((-var15 * 125 / 1.75f), 3.95f, 0.35f, 8f)
-        rotate(-var15 * 35, 0f, (var15 / 100f), -10f)
-        translate(-1.0, 0.6, -0.0)
-        rotate(30f, 0f, 1f, 0f)
-        rotate(-80f, 1f, 0f, 0f)
-        rotate(60f, 0f, 1f, 0f)
-        glTranslated(1.05, 0.35, 0.4)
-        glTranslatef(-1f, 0f, 0f)
-    }
-
-}

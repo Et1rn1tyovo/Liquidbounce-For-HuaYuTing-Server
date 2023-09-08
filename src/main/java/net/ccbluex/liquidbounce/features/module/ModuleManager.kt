@@ -14,8 +14,8 @@ import net.ccbluex.liquidbounce.features.command.CommandManager.registerCommand
 import net.ccbluex.liquidbounce.features.module.modules.combat.*
 import net.ccbluex.liquidbounce.features.module.modules.exploit.*
 import net.ccbluex.liquidbounce.features.module.modules.hyt.AutoL
-import net.ccbluex.liquidbounce.features.module.modules.hyt.HytGetName
-import net.ccbluex.liquidbounce.features.module.modules.hyt.ViaFix
+import net.ccbluex.liquidbounce.features.module.modules.hyt.AntiDeads
+import net.ccbluex.liquidbounce.features.module.modules.hyt.ViaVersionFix
 import net.ccbluex.liquidbounce.features.module.modules.misc.*
 import net.ccbluex.liquidbounce.features.module.modules.movement.*
 import net.ccbluex.liquidbounce.features.module.modules.player.*
@@ -49,7 +49,7 @@ object ModuleManager : Listenable {
             Phase::class.java,
             Teleport::class.java,
             TeleportHit::class.java,
-            ViaFix::class.java,
+            ViaVersionFix::class.java,
             AutoL::class.java,
             Cape::class.java,
             MoBends::class.java
@@ -173,7 +173,7 @@ object ModuleManager : Listenable {
             ProphuntESP,
             Reach,
             Refill,
-            HytGetName,
+            AntiDeads,
             Regen,
             ResourcePackSpoof,
             ReverseStep,

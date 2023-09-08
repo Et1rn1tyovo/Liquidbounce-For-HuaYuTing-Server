@@ -42,7 +42,7 @@ object Animations : Module("Animations", ModuleCategory.RENDER) {
 
     private val animations = arrayOf(
         OldAnimation(),
-        SwaingAnimation(),
+        SwangAnimation(),
         SmoothAnimation(),
         PunchAnimation(),
         PushAnimation(),
@@ -136,12 +136,12 @@ class PushAnimation : Animation("Push") {
     }
 
 }
-class SwaingAnimation : Animation("Swaing") {
+class SwangAnimation : Animation("Swang") {
     override fun transform(swingProgress: Float,f :Float,prevEquippedProgress: Float,equippedProgress: Float,p : Float, clientPlayer: AbstractClientPlayer){
-        transformFirstPersonItem(f / 2.0f, -0.2f)
-        val var154 = MathHelper.sin((swingProgress * swingProgress * Math.PI).toFloat())
-        rotate(-var154 / 19.0f, var154 / 20.0f, -0.0f, 9.0f)
-        rotate(-var154 * 30.0f, 10.0f, var154 / 50.0f, 0.0f)
+        transformFirstPersonItem(f / 2.0f, swingProgress)
+        val var152 = MathHelper.sin((MathHelper.sqrt_float(swingProgress) * Math.PI).toFloat())
+        rotate(var152 * 30.0f / 2.0f, -var152, -0.0f, 9.0f)
+        rotate(var152 * 40.0f, 1.0f, -var152 / 2.0f, -0.0f)
         func_178103_d(0.4f)
     }
 

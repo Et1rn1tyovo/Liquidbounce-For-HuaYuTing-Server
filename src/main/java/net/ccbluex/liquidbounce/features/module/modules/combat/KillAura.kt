@@ -115,7 +115,6 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
     private val scanRange by FloatValue("ScanRange", 2f, 0f..10f)
     private val throughWallsRange by FloatValue("ThroughWallsRange", 3f, 0f..8f)
     private val rangeSprintReduction by FloatValue("RangeSprintReduction", 0f, 0f..0.4f)
-    var lastrange: Float = 0f
     // Modes
     private val priority by ListValue(
         "Priority", arrayOf(
@@ -287,6 +286,7 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
      */
     override fun onDisable() {
         target = null
+        range = lastRange
         currentTarget = null
         hitable = false
         prevTargetEntities.clear()
